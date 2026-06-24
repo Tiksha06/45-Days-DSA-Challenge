@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Run Multi-Page Sync Script
+      - name: Run Deep Historical Sync Script
         env:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
@@ -31,10 +31,10 @@ jobs:
           os.makedirs("problems", exist_ok=True)
           graphql_url = "https://leetcode.com/graphql"
           
-          # Loop through 5 pages of history to grab up to 100 total entries
-          for page in range(5):
+          # Looping through 15 pages (300 slots) to bypass duplicate submission clutter
+          for page in range(15):
               offset = page * 20
-              print(f"Fetching submissions with offset {offset}...")
+              print(f"Deep fetching submissions with offset {offset}...")
               url = f"https://leetcode.com/api/submissions/?offset={offset}&limit=20&status=10"
               headers = {
                   "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
@@ -49,7 +49,7 @@ jobs:
 
               submissions = response.json().get("submissions_dump", [])
               if not submissions:
-                  print("No more submissions found.")
+                  print("Reached end of submission history.")
                   break
 
               for sub in submissions:
@@ -62,7 +62,7 @@ jobs:
                       
                   prob_dir = f"problems/{title_slug}"
                   if os.path.exists(f"{prob_dir}/Solution.java"):
-                      continue # Skip if already downloaded to save time
+                      continue # Skip if already captured
                       
                   os.makedirs(prob_dir, exist_ok=True)
                   
@@ -91,9 +91,9 @@ jobs:
                       else:
                           f.write(f"Automatically synced submission for {title}.")
                   
-                  time.sleep(0.5) # Soft delay to avoid rate limits
+                  time.sleep(0.4)
                   
-          print("Successfully finished historical sync!")
+          print("Successfully finished deep sync!")
           EOF
           python3 sync.py
           
@@ -102,5 +102,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add problems/
-          git commit -m "Force multi-page historical sync with full details" || echo "No changes"
+          git commit -m "Deep history sync to recover all Java questions" || echo "No changes"
           git push origin main
