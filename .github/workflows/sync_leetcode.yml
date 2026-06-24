@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Run Standalone Sync Script
+      - name: Run Full Content Sync Script
         env:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
@@ -24,9 +24,10 @@ jobs:
           csrf = os.environ.get("LEETCODE_CSRF_TOKEN")
 
           if not session or not csrf:
-              print("Missing LeetCode credentials in GitHub Secrets.")
+              print("Missing LeetCode credentials.")
               exit(1)
 
+          # Fetch recent accepted submissions
           url = "https://leetcode.com/api/submissions/?offset=0&limit=30&status=10"
           headers = {
               "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
@@ -36,11 +37,14 @@ jobs:
 
           response = requests.get(url, headers=headers)
           if response.status_code != 200:
-              print("Failed to authenticate with LeetCode.")
+              print("Failed to authenticate.")
               exit(1)
 
           submissions = response.json().get("submissions_dump", [])
           os.makedirs("problems", exist_ok=True)
+
+          # GraphQL setup to fetch actual question detail content
+          graphql_url = "https://leetcode.com/graphql"
 
           for sub in submissions:
               title_slug = sub["title_slug"]
@@ -53,15 +57,33 @@ jobs:
               prob_dir = f"problems/{title_slug}"
               os.makedirs(prob_dir, exist_ok=True)
               
-              # Save Code File
+              # Save Code
               with open(f"{prob_dir}/Solution.java", "w") as f:
                   f.write(sub["code"])
               
-              # Save Automated Question Description
+              # Fetch full question body description via GraphQL
+              query = {
+                  "query": "query questionContent($titleSlug: String!) { question(titleSlug: $titleSlug) { content } }",
+                  "variables": {"titleSlug": title_slug}
+              }
+              req_headers = {"Content-Type": "application/json", "Cookie": f"csrftoken={csrf}"}
+              q_res = requests.post(graphql_url, json=query, headers=req_headers)
+              
+              content_md = ""
+              if q_res.status_code == 200:
+                  q_data = q_res.json().get("data", {})
+                  if q_data and q_data.get("question"):
+                      content_md = q_data["question"].get("content", "")
+
+              # Save full detailed content into README
               with open(f"{prob_dir}/README.md", "w") as f:
-                  f.write(f"# {title}\n\n## Language: Java\n\nAutomatically synced submission for {title}.")
+                  f.write(f"# {title}\n\n")
+                  if content_md:
+                      f.write(content_md)
+                  else:
+                      f.write(f"Automatically synced submission for {title}.")
                   
-          print("Successfully synced code and descriptions!")
+          print("Successfully synced code and full details!")
           EOF
           python3 sync.py
           
@@ -70,5 +92,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add problems/
-          git commit -m "Auto-sync LeetCode submissions with README descriptions" || echo "No changes to commit"
+          git commit -m "Auto-sync LeetCode submissions with FULL details" || echo "No changes"
           git push origin main
