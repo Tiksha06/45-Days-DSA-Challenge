@@ -1,0 +1,22 @@
+name: Sync Leetcode Code and Descriptions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *" # Runs automatically every single day in the background
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Sync Submissions with READMEs
+        uses: carlossg/leetcode-sync-action@v1.1
+        with:
+          github-token: ${{ github.token }}
+          leetcode-session: ${{ secrets.LEETCODE_SESSION }}
+          leetcode-csrf-token: ${{ secrets.LEETCODE_CSRF_TOKEN }}
+          filter-duplicate-secs: 86400
+          verbose: true
