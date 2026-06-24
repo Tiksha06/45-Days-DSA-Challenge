@@ -27,7 +27,7 @@ jobs:
               print("Missing LeetCode credentials.")
               exit(1)
 
-          # Fetch recent accepted submissions
+          # Increased limit to 200 to catch all historical submissions
           url = "https://leetcode.com/api/submissions/?offset=0&limit=200&status=10"
           headers = {
               "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
@@ -43,7 +43,6 @@ jobs:
           submissions = response.json().get("submissions_dump", [])
           os.makedirs("problems", exist_ok=True)
 
-          # GraphQL setup to fetch actual question detail content
           graphql_url = "https://leetcode.com/graphql"
 
           for sub in submissions:
