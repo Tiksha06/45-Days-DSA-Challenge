@@ -28,7 +28,7 @@ jobs:
               exit(1)
 
           # Fetch recent accepted submissions
-          url = "https://leetcode.com/api/submissions/?offset=0&limit=30&status=10"
+          url = "https://leetcode.com/api/submissions/?offset=0&limit=200&status=10"
           headers = {
               "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
               "X-CSRFToken": csrf,
