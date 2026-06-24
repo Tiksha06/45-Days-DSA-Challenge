@@ -2,8 +2,6 @@ name: Sync Leetcode Code and Descriptions
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 8 * * *"
 
 jobs:
   build:
@@ -12,12 +10,65 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Sync Submissions with READMEs
-        uses: carlossg/leetcode-sync@v1.5
-        with:
-          github-token: ${{ github.token }}
-          leetcode-session: ${{ secrets.LEETCODE_SESSION }}
-          leetcode-csrf-token: ${{ secrets.LEETCODE_CSRF_TOKEN }}
-          filter-duplicate-secs: 86400
-          destination: 'problems'
-          verbose: true
+      - name: Run Standalone Sync Script
+        env:
+          LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
+          LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
+        run: |
+          cat << 'EOF' > sync.py
+          import os
+          import requests
+          import json
+
+          session = os.environ.get("LEETCODE_SESSION")
+          csrf = os.environ.get("LEETCODE_CSRF_TOKEN")
+
+          if not session or not csrf:
+              print("Missing LeetCode credentials in GitHub Secrets.")
+              exit(1)
+
+          url = "https://leetcode.com/api/submissions/?offset=0&limit=30&status=10"
+          headers = {
+              "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
+              "X-CSRFToken": csrf,
+              "Referer": "https://leetcode.com/submissions/"
+          }
+
+          response = requests.get(url, headers=headers)
+          if response.status_code != 200:
+              print("Failed to authenticate with LeetCode.")
+              exit(1)
+
+          submissions = response.json().get("submissions_dump", [])
+          os.makedirs("problems", exist_ok=True)
+
+          for sub in submissions:
+              title_slug = sub["title_slug"]
+              title = sub["title"]
+              lang = sub["lang"]
+              
+              if lang != "java":
+                  continue
+                  
+              prob_dir = f"problems/{title_slug}"
+              os.makedirs(prob_dir, exist_ok=True)
+              
+              # Save Code File
+              with open(f"{prob_dir}/Solution.java", "w") as f:
+                  f.write(sub["code"])
+              
+              # Save Automated Question Description
+              with open(f"{prob_dir}/README.md", "w") as f:
+                  f.write(f"# {title}\n\n## Language: Java\n\nAutomatically synced submission for {title}.")
+                  
+          print("Successfully synced code and descriptions!")
+          EOF
+          python3 sync.py
+          
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add problems/
+          git commit -m "Auto-sync LeetCode submissions with README descriptions" || echo "No changes to commit"
+          git push origin main
