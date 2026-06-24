@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Run Full Content Sync Script
+      - name: Run Multi-Page Sync Script
         env:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
@@ -19,6 +19,7 @@ jobs:
           import os
           import requests
           import json
+          import time
 
           session = os.environ.get("LEETCODE_SESSION")
           csrf = os.environ.get("LEETCODE_CSRF_TOKEN")
@@ -27,62 +28,72 @@ jobs:
               print("Missing LeetCode credentials.")
               exit(1)
 
-          # Increased limit to 200 to catch all historical submissions
-          url = "https://leetcode.com/api/submissions/?offset=0&limit=200&status=10"
-          headers = {
-              "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
-              "X-CSRFToken": csrf,
-              "Referer": "https://leetcode.com/submissions/"
-          }
-
-          response = requests.get(url, headers=headers)
-          if response.status_code != 200:
-              print("Failed to authenticate.")
-              exit(1)
-
-          submissions = response.json().get("submissions_dump", [])
           os.makedirs("problems", exist_ok=True)
-
           graphql_url = "https://leetcode.com/graphql"
-
-          for sub in submissions:
-              title_slug = sub["title_slug"]
-              title = sub["title"]
-              lang = sub["lang"]
-              
-              if lang != "java":
-                  continue
-                  
-              prob_dir = f"problems/{title_slug}"
-              os.makedirs(prob_dir, exist_ok=True)
-              
-              # Save Code
-              with open(f"{prob_dir}/Solution.java", "w") as f:
-                  f.write(sub["code"])
-              
-              # Fetch full question body description via GraphQL
-              query = {
-                  "query": "query questionContent($titleSlug: String!) { question(titleSlug: $titleSlug) { content } }",
-                  "variables": {"titleSlug": title_slug}
+          
+          # Loop through 5 pages of history to grab up to 100 total entries
+          for page in range(5):
+              offset = page * 20
+              print(f"Fetching submissions with offset {offset}...")
+              url = f"https://leetcode.com/api/submissions/?offset={offset}&limit=20&status=10"
+              headers = {
+                  "Cookie": f"LEETCODE_SESSION={session}; csrftoken={csrf}",
+                  "X-CSRFToken": csrf,
+                  "Referer": "https://leetcode.com/submissions/"
               }
-              req_headers = {"Content-Type": "application/json", "Cookie": f"csrftoken={csrf}"}
-              q_res = requests.post(graphql_url, json=query, headers=req_headers)
-              
-              content_md = ""
-              if q_res.status_code == 200:
-                  q_data = q_res.json().get("data", {})
-                  if q_data and q_data.get("question"):
-                      content_md = q_data["question"].get("content", "")
 
-              # Save full detailed content into README
-              with open(f"{prob_dir}/README.md", "w") as f:
-                  f.write(f"# {title}\n\n")
-                  if content_md:
-                      f.write(content_md)
-                  else:
-                      f.write(f"Automatically synced submission for {title}.")
+              response = requests.get(url, headers=headers)
+              if response.status_code != 200:
+                  print("Failed to fetch data page.")
+                  continue
+
+              submissions = response.json().get("submissions_dump", [])
+              if not submissions:
+                  print("No more submissions found.")
+                  break
+
+              for sub in submissions:
+                  title_slug = sub["title_slug"]
+                  title = sub["title"]
+                  lang = sub["lang"]
                   
-          print("Successfully synced code and full details!")
+                  if lang != "java":
+                      continue
+                      
+                  prob_dir = f"problems/{title_slug}"
+                  if os.path.exists(f"{prob_dir}/Solution.java"):
+                      continue # Skip if already downloaded to save time
+                      
+                  os.makedirs(prob_dir, exist_ok=True)
+                  
+                  # Save Code
+                  with open(f"{prob_dir}/Solution.java", "w") as f:
+                      f.write(sub["code"])
+                  
+                  # Fetch Description
+                  query = {
+                      "query": "query questionContent($titleSlug: String!) { question(titleSlug: $titleSlug) { content } }",
+                      "variables": {"titleSlug": title_slug}
+                  }
+                  req_headers = {"Content-Type": "application/json", "Cookie": f"csrftoken={csrf}"}
+                  q_res = requests.post(graphql_url, json=query, headers=req_headers)
+                  
+                  content_md = ""
+                  if q_res.status_code == 200:
+                      q_data = q_res.json().get("data", {})
+                      if q_data and q_data.get("question"):
+                          content_md = q_data["question"].get("content", "")
+
+                  with open(f"{prob_dir}/README.md", "w") as f:
+                      f.write(f"# {title}\n\n")
+                      if content_md:
+                          f.write(content_md)
+                      else:
+                          f.write(f"Automatically synced submission for {title}.")
+                  
+                  time.sleep(0.5) # Soft delay to avoid rate limits
+                  
+          print("Successfully finished historical sync!")
           EOF
           python3 sync.py
           
@@ -91,5 +102,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add problems/
-          git commit -m "Auto-sync LeetCode submissions with FULL details" || echo "No changes"
+          git commit -m "Force multi-page historical sync with full details" || echo "No changes"
           git push origin main
