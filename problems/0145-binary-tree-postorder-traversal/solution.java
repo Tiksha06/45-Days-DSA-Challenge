@@ -1,0 +1,19 @@
+class Solution {
+    public List<Integer> postorderTraversal(TreeNode root) {
+        List<Integer> result=new ArrayList<>();
+        if(root==null) return result;
+        Stack<TreeNode> s1=new Stack<>();
+        Stack<TreeNode> s2=new Stack<>();
+        s1.push(root);
+        while(!s1.isEmpty()){
+            TreeNode curr=s1.pop();
+            s2.push(curr);
+            if(curr.left!=null) s1.push(curr.left);
+            if(curr.right!=null) s1.push(curr.right);
+        }
+        while(!s2.isEmpty()){
+            result.add(s2.pop().val);
+        }
+        return result;
+    }
+}
