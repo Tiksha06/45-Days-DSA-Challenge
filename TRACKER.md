@@ -11,7 +11,7 @@
 | **Day 30** | Strings & Trie | String to Integer (atoi) | [View Code](./06-Strings_and_Trie/string-to-integer-atoi) | ✅ |
 | | | Longest Common Prefix | [View Code](./06-Strings_and_Trie/longest-common-prefix) | ✅ |
 | | | Rabin Karp Algorithm (Repeated String Match) | [View Code](./06-Strings_and_Trie/repeated-string-match) | ✅ |
-| **Day 31** | Strings & Trie | Z Function (Find First Occurrence Index) | *[Blank - Add Later]* | ✅ |
+| **Day 31** | Strings & Trie | Z Function (Find First Occurrence Index) | [View Code](./07-Trees_Graphs_and_DP/Z-function) | ✅ |
 | | | KMP Algorithm / LPS Array | *[Blank - Add Later]* | ✅ |
 | | | Minimum Insertion Steps to Make String Palindrome | [View Code](./06-Strings_and_Trie/minimum-insertion-steps-to-make-a-string-palindrome) | ✅ |
 | **Day 32** | Strings & Trie | Valid Anagram | [View Code](./06-Strings_and_Trie/valid-anagram) | ✅ |
@@ -33,3 +33,14 @@
 | | | Maximum Depth in BT | [View Code](./07-Trees_Graphs_and_DP/maximum-depth-of-binary-tree) | ✅ |
 | | | Diameter of Binary Tree | [View Code](./07-Trees_Graphs_and_DP/diameter-of-binary-tree) | ✅ |
 | | | Check for Balanced Binary Tree | [View Code](./07-Trees_Graphs_and_DP/balanced-binary-tree) | ✅ |
+| **Day 37** | Trees & Graphs | LCA in BT | [View Code](./07-Trees_Graphs_and_DP/lowest-common-ancestor-of-a-binary-tree) | ✅ |
+| | | Check if two trees are identical or not | [View Code](./07-Trees_Graphs_and_DP/same-tree) | ✅ |
+| | | Zig Zag or Spiral Traversal | [View Code](./07-Trees_Graphs_and_DP/binary-tree-zigzag-level-order-traversal) | ✅ |
+| | | Boundary Traversal | [View Code](./07-Trees_Graphs_and_DP/boundary-traversal) | ✅ |
+| **Day 38** | Trees & Graphs | Maximum path sum | [View Code](./07-Trees_Graphs_and_DP/binary-tree-maximum-path-sum) | ✅ |
+| | | Construct a BT from Preorder and Inorder | [View Code](./07-Trees_Graphs_and_DP/construct-binary-tree-from-preorder-and-inorder-traversal) | ✅ |
+| | | Construct a BT from Postorder and Inorder | [View Code](./07-Trees_Graphs_and_DP/binary-tree-postorder-traversal) | ✅ |
+| **Day 39** | Trees & Graphs | Symmetric Binary Tree (Queue Approach) | [View Code](./07-Trees_Graphs_and_DP/symmetric-tree-using-queue) | ✅ |
+| | | Check for symmetrical BTs (Recursion Approach) | [View Code](./07-Trees_Graphs_and_DP/symmetric-tree-using-recursion) | ✅ |
+| | | Flatten Binary Tree to Linked List | [View Code](./07-Trees_Graphs_and_DP/flatten-binary-tree-to-linked-list) | ✅ |
+| | | Children Sum Property in Binary Tree | [View Code](./07-Trees_Graphs_and_DP/children-sum-property-in-binary-tree) | ✅ |
